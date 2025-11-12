@@ -56,6 +56,12 @@ const reviewscollection = Alldata.collection("UserReviews");
         res.send(result)
         console.log(`succesfull`)
       })
+      app.get('/myreview/:email',async(req,res)=>{
+        const email= req.params.email
+        const query={ReviewerEmail:email}
+        const result= await reviewscollection.find(query).toArray()
+        res.send(result)
+      })
 
 
     }finally{}
