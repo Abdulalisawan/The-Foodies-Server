@@ -50,7 +50,12 @@ const reviewscollection = Alldata.collection("UserReviews");
         const result= await reviewscollection.findOne(query)
         res.send(result)
       })
-
+      app.post('/Add-review',async(req , res)=>{
+        const data = req.body
+        const result = await reviewscollection.insertOne(data)
+        res.send(result)
+        console.log(`succesfull`)
+      })
 
 
     }finally{}
