@@ -44,8 +44,9 @@ const veryfytoken= async(req , res , next)=>{
       console.log(`verified doen`,userinfo)
       req.token_email= userinfo.email
       next()
-    }catch{
-       return res.status(401).send({ message: "No token provided" });
+    }catch(error){
+      console.error("Error verifying token:", error);
+      return res.status(401).send({ message: "No token provided" });
 
     }
     
