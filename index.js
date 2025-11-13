@@ -4,10 +4,18 @@ require('dotenv').config({ path: '.env.local' });
 const app = express()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 var cors = require('cors')
+const admin = require("firebase-admin");
 const port = process.env.PORT || 3000
 app.use(cors())
 app.use(express.json())
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@the-foodies.yh0yuh6.mongodb.net/?appName=The-foodies`;
+
+
+const serviceAccount = require("./the-foodies.json");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 
 
 const client = new MongoClient(uri, {
@@ -17,6 +25,30 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   }
 });
+
+
+const veryfytoken= async(req , res , next)=>{
+ 
+  if(!req.headers.authorization){   
+     return res.status(401).send({ message: "No token provided" });
+    }
+    const token = req.headers.authorization.split(' ')[1]
+    if(!token){
+      return res.status(401).send({ message: "No token provided" });
+
+    }
+    try{
+      const userinfo = await admin.auth().verifyIdToken(token)
+      console.log(`verified doen`,userinfo)
+      req.token_email= userinfo.email
+      next()
+    }catch{
+       return res.status(401).send({ message: "No token provided" });
+
+    }
+    
+
+}
 
  async function Run(){
     try{
@@ -59,9 +91,15 @@ const favouritecollection = Alldata.collection("favouritedata");
         res.send(result)
         console.log(`succesfull`)
       })
-      app.get('/myreview/:email',async(req,res)=>{
+      app.get('/myreview/:email',veryfytoken,async(req,res)=>{
+        console.log(req)
         const email= req.params.email
+        if(email!== req.token_email){
+          return res.status(403).send({ message: "Unauthorizedacces" })
+
+        }
         const query={ReviewerEmail:email}
+
         const result= await reviewscollection.find(query).toArray()
         res.send(result)
       })
@@ -73,6 +111,7 @@ const favouritecollection = Alldata.collection("favouritedata");
       })
       app.delete('/myreview/:id',async(req ,res)=>{
         const data= req.params.id
+        
         const query={_id: new ObjectId(data)}
         const result= await reviewscollection.deleteOne(query)
         res.send(result)
@@ -91,8 +130,15 @@ const favouritecollection = Alldata.collection("favouritedata");
         const result = await favouritecollection.insertOne(data)
         res.send(result)
       })
-      app.get('/favourite', async(req, res)=>{
-        const result= await favouritecollection.find().toArray()
+      app.get('/favourite/:email',veryfytoken, async(req, res)=>{
+        const value = req.params.email
+        if(value !== req.token_email ){
+          return res.status(403).send({ message: "Unauthorizedacces" })
+
+        }
+        const query={_email:value}
+
+        const result= await favouritecollection.find(query).toArray()
         res.send(result)
 
       })
