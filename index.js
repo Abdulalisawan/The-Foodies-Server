@@ -29,11 +29,6 @@ const client = new MongoClient(uri, {
 });
 
 
-// Global database references
-let reviewscollection;
-let dealcollection;
-let favouritecollection;
-
 const veryfytoken= async(req , res , next)=>{
  
   if(!req.headers.authorization){   
@@ -49,179 +44,124 @@ const veryfytoken= async(req , res , next)=>{
       console.log(`verified doen`,userinfo)
       req.token_email= userinfo.email
       next()
-    }catch(error){
-      console.error("Error verifying token:", error);
-      return res.status(401).send({ message: "No token provided" });
+    }catch{
+       return res.status(401).send({ message: "No token provided" });
 
     }
     
 
 }
 
-// Define all routes first
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
-
-app.get('/reviews',async(req , res)=>{
-  try{
-      const cursor = reviewscollection.find()
-      const result= await cursor.toArray()
-      res.send(result)
-  }catch(error){
-      console.error("Error fetching data:", error);
-      res.status(500).send({ message: "Failed to fetch reviews" });
-  }
-})
-
-app.get('/search-reviews', async(req ,res)=>{
-  try{
-    const search = req.query.search || "";
-    const query= { foodName:{$regex: search , $options: "i"}};
-    const result = await reviewscollection.find(query).toArray()
-    res.send(result)
-  }catch(error){
-    console.error("Error searching reviews:", error);
-    res.status(500).send({ message: "Failed to search reviews" });
-  }
-})
-
-app.get('/review-detail/:id', async(req , res)=>{
-  try{
-    const params= req.params.id
-    const query={_id: new ObjectId(params)}
-    const result= await reviewscollection.findOne(query)
-    res.send(result)
-  }catch(error){
-    console.error("Error fetching review detail:", error);
-    res.status(500).send({ message: "Failed to fetch review detail" });
-  }
-})
-
-app.post('/Add-review',async(req , res)=>{
-  try{
-    const data = req.body
-    const result = await reviewscollection.insertOne(data)
-    res.send(result)
-    console.log(`succesfull`)
-  }catch(error){
-    console.error("Error adding review:", error);
-    res.status(500).send({ message: "Failed to add review" });
-  }
-})
-
-app.get('/myreview/:email',veryfytoken,async(req,res)=>{
-  try{
-    console.log(req)
-    const email= req.params.email
-    if(email!== req.token_email){
-      return res.status(403).send({ message: "Unauthorizedacces" })
-
-    }
-    const query={ReviewerEmail:email}
-
-    const result= await reviewscollection.find(query).toArray()
-    res.send(result)
-  }catch(error){
-    console.error("Error fetching my reviews:", error);
-    res.status(500).send({ message: "Failed to fetch reviews" });
-  }
-})
-
-app.get('/deals',async(req , res)=>{
-  try{
-    const result = await dealcollection.find().toArray()
-    res.send(result)
-  }catch(error){
-    console.error("Error fetching deals:", error);
-    res.status(500).send({ message: "Failed to fetch deals" });
-  }
-})
-
-app.delete('/myreview/:id',async(req ,res)=>{
-  try{
-    const data= req.params.id
-    const query={_id: new ObjectId(data)}
-    const result= await reviewscollection.deleteOne(query)
-    res.send(result)
-  }catch(error){
-    console.error("Error deleting review:", error);
-    res.status(500).send({ message: "Failed to delete review" });
-  }
-})
-
-app.put('/edit-review/:id', async(req,res)=>{
-  try{
-    const ID= req.params.id
-    const data= req.body
-    const result= await reviewscollection.updateOne(
-      {_id: new ObjectId(ID)},
-      {$set:data}
-    )
-    res.send(result)
-  }catch(error){
-    console.error("Error updating review:", error);
-    res.status(500).send({ message: "Failed to update review" });
-  }
-})
-
-app.post('/favourite-data',async(req, res)=>{
-  try{
-    const data = req.body
-    const result = await favouritecollection.insertOne(data)
-    res.send(result)
-  }catch(error){
-    console.error("Error adding favourite:", error);
-    res.status(500).send({ message: "Failed to add favourite" });
-  }
-})
-
-app.get('/favourite/:email',veryfytoken, async(req, res)=>{
-  try{
-    const value = req.params.email
-    if(value !== req.token_email ){
-      return res.status(403).send({ message: "Unauthorizedacces" })
-
-    }
-    const query={_email:value}
-
-    const result= await favouritecollection.find(query).toArray()
-    res.send(result)
-  }catch(error){
-    console.error("Error fetching favourites:", error);
-    res.status(500).send({ message: "Failed to fetch favourites" });
-  }
-
-})
-
-// Connect to database
-async function connectDatabase(){
+ async function Run(){
     try{
-      await client.connect();
-      console.log("Pinged your deployment. You successfully connected to MongoDB!");
-      const Alldata = client.db("Alldata");
+// await client.connect();
 
-      reviewscollection = Alldata.collection("UserReviews");
-      dealcollection = Alldata.collection("Dealdata");
-      favouritecollection = Alldata.collection("favouritedata");
+console.log("Pinged your deployment. You successfully connected to MongoDB!");
+const Alldata = client.db("Alldata");
 
-      return true;
-    }catch(error){
-      console.error("Failed to connect to database:", error);
-      return false;
+const reviewscollection = Alldata.collection("UserReviews");
+const dealcollection = Alldata.collection("Dealdata");
+const favouritecollection = Alldata.collection("favouritedata");
+
+      app.get('/reviews',async(req , res)=>{
+        try{
+            const cursor = reviewscollection.find()
+            const result= await cursor.toArray()
+            res.send(result)
+        }catch(error){
+            console.error("Error fetching data:", error);
+    res.status(500).send({ message: "Failed to fetch reviews" });
+        }
+      })
+
+      app.get('/search-reviews', async(req ,res)=>{
+        const search = req.query.search || "";
+        const query= { foodName:{$regex: search , $options: "i"}};
+        const result = await reviewscollection.find(query).toArray()
+        res.send(result)
+
+      })
+      app.get('/review-detail/:id', async(req , res)=>{
+        const params= req.params.id
+        const query={_id: new ObjectId(params)}
+        const result= await reviewscollection.findOne(query)
+        res.send(result)
+      })
+      app.post('/Add-review',async(req , res)=>{
+        const data = req.body
+        const result = await reviewscollection.insertOne(data)
+        res.send(result)
+        console.log(`succesfull`)
+      })
+      app.get('/myreview/:email',veryfytoken,async(req,res)=>{
+        console.log(req)
+        const email= req.params.email
+        if(email!== req.token_email){
+          return res.status(403).send({ message: "Unauthorizedacces" })
+
+        }
+        const query={ReviewerEmail:email}
+
+        const result= await reviewscollection.find(query).toArray()
+        res.send(result)
+      })
+
+      app.get('/deals',async(req , res)=>{
+        
+        const result = await dealcollection.find().toArray()
+        res.send(result)
+      })
+      app.delete('/myreview/:id',async(req ,res)=>{
+        const data= req.params.id
+        
+        const query={_id: new ObjectId(data)}
+        const result= await reviewscollection.deleteOne(query)
+        res.send(result)
+      })
+      app.put('/edit-review/:id', async(req,res)=>{
+        const ID= req.params.id
+        const data= req.body
+        const result= await reviewscollection.updateOne(
+          {_id: new ObjectId(ID)},
+          {$set:data}
+        )
+        res.send(result)
+      })
+      app.post('/favourite-data',async(req, res)=>{
+        const data = req.body
+        const result = await favouritecollection.insertOne(data)
+        res.send(result)
+      })
+      app.get('/favourite/:email',veryfytoken, async(req, res)=>{
+        const value = req.params.email
+        if(value !== req.token_email ){
+          return res.status(403).send({ message: "Unauthorizedacces" })
+
+        }
+        const query={_email:value}
+
+        const result= await favouritecollection.find(query).toArray()
+        res.send(result)
+
+      })
+
+
+    }finally{
+      // Graceful shutdown - close MongoDB connection
+      // Client will be closed when the process terminates
     }
+
 }
 
 // Start the server and initialize database
-connectDatabase().then(success => {
-  if(success){
-    app.listen(port, () => {
-      console.log(`Example app listening on port ${port}`)
-    })
-  }else{
-    console.error("Could not start server - database connection failed")
-    process.exit(1)
-  }
+Run().then(() => {
+  app.get('/', (req, res) => {
+    res.send('Hello World!')
+  })
+
+  app.listen(port, () => {
+    console.log(`Example app listening on port ${port}`)
+  })
 }).catch(error => {
   console.error("Failed to start server:", error)
   process.exit(1)
