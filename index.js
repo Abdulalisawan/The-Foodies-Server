@@ -24,7 +24,10 @@ await client.connect();
 await client.db("admin").command({ ping: 1 });
 console.log("Pinged your deployment. You successfully connected to MongoDB!");
 const Alldata = client.db("Alldata");
+
 const reviewscollection = Alldata.collection("UserReviews");
+const dealcollection = Alldata.collection("Dealdata");
+const favouritecollection = Alldata.collection("favouritedata");
 
       app.get('/reviews',async(req , res)=>{
         try{
@@ -61,6 +64,37 @@ const reviewscollection = Alldata.collection("UserReviews");
         const query={ReviewerEmail:email}
         const result= await reviewscollection.find(query).toArray()
         res.send(result)
+      })
+
+      app.get('/deals',async(req , res)=>{
+        
+        const result = await dealcollection.find().toArray()
+        res.send(result)
+      })
+      app.delete('/myreview/:id',async(req ,res)=>{
+        const data= req.params.id
+        const query={_id: new ObjectId(data)}
+        const result= await reviewscollection.deleteOne(query)
+        res.send(result)
+      })
+      app.put('/edit-review/:id', async(req,res)=>{
+        const ID= req.params.id
+        const data= req.body
+        const result= await reviewscollection.updateOne(
+          {_id: new ObjectId(ID)},
+          {$set:data}
+        )
+        res.send(result)
+      })
+      app.post('/favourite-data',async(req, res)=>{
+        const data = req.body
+        const result = await favouritecollection.insertOne(data)
+        res.send(result)
+      })
+      app.get('/favourite', async(req, res)=>{
+        const result= await favouritecollection.find().toArray()
+        res.send(result)
+
       })
 
 
